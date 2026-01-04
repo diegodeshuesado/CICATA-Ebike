@@ -1,0 +1,7 @@
+{
+  "name": "Sistema de Telemetría LEVs - IPN CICATA",
+  "description": "Plataforma de monitoreo en tiempo real para vehículos eléctricos ligeros del IPN CICATA Unidad Querétaro.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
