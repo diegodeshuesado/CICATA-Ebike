@@ -12,6 +12,13 @@ dist
 dist-ssr
 *.local
 
+# Variables de entorno (secretos: tokens de InfluxDB, API keys, etc.)
+# -- ver PLAN_MEJORAS.md, punto S3. .env.example SÍ se versiona porque
+# no trae ningún valor real, solo la plantilla de qué variables se necesitan.
+.env
+.env.*
+!.env.example
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -22,3 +29,20 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# H2: binario de InfluxDB (114 MB, se descarga aparte, no pertenece al repo)
+# y base de datos SQLite local (datos de usuarios/sesiones de tu máquina,
+# no código) -- ver PLAN_MEJORAS.md, punto H2.
+influxdb/
+*.exe
+server/*.db
+server/*.db-journal
+server/*.db-wal
+server/*.db-shm
+
+# Cache de bytecode de Python (generado por los scripts 02_setup_influxdb.py,
+# test_pivot.py, test_query.py)
+__pycache__/
+*.pyc
+
+_to_delete/

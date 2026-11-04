@@ -1,19 +1,36 @@
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Box, Card, CardContent, Typography, TextField, 
-  Button, Link as MuiLink, Grid, Alert, Fade, Chip
+import {
+  Box, Card, CardContent, Typography, TextField,
+  Button, Link as MuiLink, Grid, Alert, Fade, Chip, CircularProgress
 } from '@mui/material';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { COLORS } from '../constants';
 import { Security, School, Info } from '@mui/icons-material';
+import { api } from '../services/api';
 
 const Register: React.FC = () => {
+  const [nombre, setNombre] = useState('');
+  const [apellidos, setApellidos] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [nfc, setNfc] = useState('');
   const [detectedRole, setDetectedRole] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  // F1: antes este formulario no llamaba a ningún endpoint -- solo hacía
+  // alert() y redirigía a /login, sin crear nada en la base de datos. Ahora
+  // sí crea la cuenta de verdad (POST /api/auth/register), pero pendiente
+  // de aprobación; `success` controla la pantalla de confirmación en vez
+  // de un alert() del navegador.
+  const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
 
-  // Lógica de detección automática de rol por correo
+  // Lógica de detección automática de rol por correo (mismo criterio que
+  // usa el servidor en server/index.js `detectRoleFromEmail` -- el servidor
+  // es quien decide de verdad el rol al registrar, esto es solo para
+  // mostrarle al usuario qué esperar antes de enviar el formulario).
   useEffect(() => {
     if (email.toLowerCase().endsWith('@ipn.mx')) {
       setDetectedRole('Investigador');
@@ -26,17 +43,75 @@ const Register: React.FC = () => {
     }
   }, [email]);
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+
     if (detectedRole === 'Dominio no reconocido' || !detectedRole) {
-      alert('Por favor use un correo institucional válido (@ipn.mx o @alumno.ipn.mx)');
+      setError('Por favor use un correo institucional válido (@ipn.mx o @alumno.ipn.mx)');
       return;
     }
-    
-    // Simular registro exitoso
-    alert(`Solicitud de registro como ${detectedRole} enviada. Un administrador revisará su acceso.`);
-    navigate('/login');
+    if (!nombre.trim() || !apellidos.trim()) {
+      setError('Nombre y apellidos son requeridos');
+      return;
+    }
+    if (password.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Las contraseñas no coinciden');
+      return;
+    }
+    if (detectedRole === 'Usuario Bicicleta' && !nfc.trim()) {
+      setError('El ID de tarjeta NFC es requerido para cuentas de Usuario Bicicleta');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await api.register({
+        nombre: `${nombre.trim()} ${apellidos.trim()}`,
+        email,
+        password,
+        nfc_token: detectedRole === 'Usuario Bicicleta' ? nfc.trim() : undefined,
+      });
+      setSuccess(true);
+    } catch (err: any) {
+      setError(err?.message || 'No se pudo completar el registro. Intenta de nuevo.');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (success) {
+    return (
+      <Box sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: '#f5f5f5',
+        p: 2
+      }}>
+        <Card sx={{ maxWidth: 500, width: '100%', p: 2 }}>
+          <CardContent sx={{ textAlign: 'center' }}>
+            <Security sx={{ fontSize: 56, color: COLORS.blueInfo, mb: 2 }} />
+            <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>
+              Solicitud registrada
+            </Typography>
+            <Typography variant="body1" color="textSecondary" sx={{ mb: 3 }}>
+              Tu cuenta como <strong>{detectedRole}</strong> quedó creada, pero antes de poder iniciar sesión un
+              Administrador debe aprobarla desde el panel de Usuarios. Te avisarán cuando esté lista.
+            </Typography>
+            <Button variant="contained" fullWidth sx={{ bgcolor: COLORS.ipnGuinda }} onClick={() => navigate('/login')}>
+              Ir a Iniciar Sesión
+            </Button>
+          </CardContent>
+        </Card>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ 
@@ -68,14 +143,30 @@ const Register: React.FC = () => {
           <Alert severity="info" icon={<Info />} sx={{ mb: 3 }}>
             El sistema asignará su rol automáticamente basándose en su correo institucional.
           </Alert>
-          
+
+          {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
+
           <form onSubmit={handleRegister}>
             <Grid container spacing={2}>
               <Grid item xs={12} sm={6}>
-                <TextField fullWidth label="Nombre(s)" variant="outlined" required />
+                <TextField
+                  fullWidth
+                  label="Nombre(s)"
+                  variant="outlined"
+                  required
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                />
               </Grid>
               <Grid item xs={12} sm={6}>
-                <TextField fullWidth label="Apellidos" variant="outlined" required />
+                <TextField
+                  fullWidth
+                  label="Apellidos"
+                  variant="outlined"
+                  required
+                  value={apellidos}
+                  onChange={(e) => setApellidos(e.target.value)}
+                />
               </Grid>
               <Grid item xs={12}>
                 <TextField 
@@ -121,34 +212,55 @@ const Register: React.FC = () => {
               )}
 
               <Grid item xs={12} sm={6}>
-                <TextField fullWidth label="Contraseña" type="password" variant="outlined" required />
+                <TextField
+                  fullWidth
+                  label="Contraseña"
+                  type="password"
+                  variant="outlined"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  helperText="Mínimo 6 caracteres"
+                />
               </Grid>
               <Grid item xs={12} sm={6}>
-                <TextField fullWidth label="Confirmar Contraseña" type="password" variant="outlined" required />
+                <TextField
+                  fullWidth
+                  label="Confirmar Contraseña"
+                  type="password"
+                  variant="outlined"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  error={confirmPassword.length > 0 && confirmPassword !== password}
+                  helperText={confirmPassword.length > 0 && confirmPassword !== password ? 'No coincide' : ' '}
+                />
               </Grid>
-              
+
               {detectedRole === 'Usuario Bicicleta' && (
                 <Grid item xs={12}>
-                  <TextField 
-                    fullWidth 
-                    label="ID Tarjeta NFC" 
-                    variant="outlined" 
+                  <TextField
+                    fullWidth
+                    label="ID Tarjeta NFC"
+                    variant="outlined"
                     required
-                    helperText="Ingrese el ID físico de su credencial de alumno" 
+                    value={nfc}
+                    onChange={(e) => setNfc(e.target.value)}
+                    helperText="Ingrese el ID físico de su credencial de alumno"
                   />
                 </Grid>
               )}
             </Grid>
 
-            <Button 
+            <Button
               type="submit"
-              fullWidth 
-              variant="contained" 
-              size="large" 
-              disabled={!detectedRole || detectedRole === 'Dominio no reconocido'}
+              fullWidth
+              variant="contained"
+              size="large"
+              disabled={loading || !detectedRole || detectedRole === 'Dominio no reconocido'}
               sx={{ mt: 4, mb: 2, bgcolor: COLORS.ipnGuinda }}
             >
-              Solicitar Registro
+              {loading ? <CircularProgress size={24} color="inherit" /> : 'Solicitar Registro'}
             </Button>
           </form>
 

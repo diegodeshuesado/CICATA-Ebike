@@ -2,9 +2,9 @@
 import React, { useState, useMemo } from 'react';
 import { Box, Typography, Grid, Card, CardContent, Button, MenuItem, TextField, Fade } from '@mui/material';
 import { Download, FilterList } from '@mui/icons-material';
-import { 
-  Chart as ChartJS, CategoryScale, LinearScale, BarElement, 
-  Title, Tooltip, Legend, ArcElement 
+import {
+  Chart as ChartJS, CategoryScale, LinearScale, BarElement,
+  Title, Tooltip, Legend, ArcElement
 } from 'chart.js';
 import { Bar, Pie } from 'react-chartjs-2';
 import { COLORS, MOCK_BIKES } from '../constants';
@@ -84,10 +84,10 @@ const ReportsPage: React.FC = () => {
             <FilterList color="action" sx={{ mr: 1 }} />
             <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>Filtros:</Typography>
           </Box>
-          <TextField 
-            select 
-            label="Periodo de Tiempo" 
-            size="small" 
+          <TextField
+            select
+            label="Periodo de Tiempo"
+            size="small"
             value={period}
             onChange={(e) => setPeriod(e.target.value)}
             sx={{ minWidth: 180 }}
@@ -96,10 +96,10 @@ const ReportsPage: React.FC = () => {
             <MenuItem value="7d">Últimos 7 días</MenuItem>
             <MenuItem value="30d">Últimos 30 días</MenuItem>
           </TextField>
-          <TextField 
-            select 
-            label="Vehículo" 
-            size="small" 
+          <TextField
+            select
+            label="Vehículo"
+            size="small"
             value={selectedBike}
             onChange={(e) => setSelectedBike(e.target.value)}
             sx={{ minWidth: 180 }}
@@ -113,7 +113,7 @@ const ReportsPage: React.FC = () => {
       </Card>
 
       <Grid container spacing={3}>
-        <Grid item xs={12} md={8}>
+        <Grid item xs={12} md={selectedBike === 'all' ? 8 : 12}>
           <Fade in={true} key={period + selectedBike}>
             <Card sx={{ height: '100%' }}>
               <CardContent>
@@ -121,46 +121,46 @@ const ReportsPage: React.FC = () => {
                   {selectedBike === 'all' ? 'Consumo Energético Total' : `Consumo de Unidad ${selectedBike}`}
                 </Typography>
                 <Box sx={{ height: 350 }}>
-                  <Bar 
-                    data={energyData} 
-                    options={{ 
-                      responsive: true, 
+                  <Bar
+                    data={energyData}
+                    options={{
+                      responsive: true,
                       maintainAspectRatio: false,
-                      plugins: { 
+                      plugins: {
                         legend: { display: false },
                         tooltip: { backgroundColor: COLORS.grayDark }
                       },
                       scales: {
                         y: { beginAtZero: true, title: { display: true, text: 'Energía (kWh)' } }
                       }
-                    }} 
+                    }}
                   />
                 </Box>
               </CardContent>
             </Card>
           </Fade>
         </Grid>
-        <Grid item xs={12} md={4}>
-          <Fade in={true} key={selectedBike}>
-            <Card sx={{ height: '100%' }}>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  {selectedBike === 'all' ? 'Estado de Disponibilidad' : 'Diagnóstico de Salud'}
-                </Typography>
-                <Box sx={{ height: 300, display: 'flex', justifyContent: 'center', mt: 4 }}>
-                  <Pie data={fleetStatusData} options={{ maintainAspectRatio: false }} />
-                </Box>
-                <Box sx={{ mt: 4, p: 2, bgcolor: '#f8f9fa', borderRadius: 2 }}>
-                  <Typography variant="body2" color="textSecondary" align="center">
-                    {selectedBike === 'all' 
-                      ? "Datos consolidados de 8 unidades monitoreadas." 
-                      : `Análisis detallado de la unidad ${selectedBike} basada en telemetría.`}
+        {selectedBike === 'all' && (
+          <Grid item xs={12} md={4}>
+            <Fade in={true} key={selectedBike}>
+              <Card sx={{ height: '100%' }}>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    Estado de Disponibilidad
                   </Typography>
-                </Box>
-              </CardContent>
-            </Card>
-          </Fade>
-        </Grid>
+                  <Box sx={{ height: 300, display: 'flex', justifyContent: 'center', mt: 4 }}>
+                    <Pie data={fleetStatusData} options={{ maintainAspectRatio: false }} />
+                  </Box>
+                  <Box sx={{ mt: 4, p: 2, bgcolor: '#f8f9fa', borderRadius: 2 }}>
+                    <Typography variant="body2" color="textSecondary" align="center">
+                      Datos consolidados de la flota.
+                    </Typography>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Fade>
+          </Grid>
+        )}
       </Grid>
     </Box>
   );

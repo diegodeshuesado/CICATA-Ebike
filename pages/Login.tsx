@@ -1,13 +1,14 @@
 
 import React, { useState } from 'react';
-import { 
-  Box, Card, CardContent, Typography, TextField, 
-  Button, Tabs, Tab, Checkbox, FormControlLabel, 
-  Link as MuiLink, CircularProgress, Alert 
+import {
+  Box, Card, CardContent, Typography, TextField,
+  Button, Tabs, Tab, Checkbox, FormControlLabel,
+  Link as MuiLink, CircularProgress, Alert
 } from '@mui/material';
 import { Contactless, Email } from '@mui/icons-material';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { PendingApprovalError } from '../services/api';
 import { COLORS } from '../constants';
 
 const Login: React.FC = () => {
@@ -23,11 +24,17 @@ const Login: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    const success = await login(email, password);
-    if (success) {
-      navigate('/');
-    } else {
-      setError('Credenciales incorrectas');
+    try {
+      const success = await login(email, password);
+      if (success) {
+        navigate('/');
+      } else {
+        setError('Credenciales incorrectas');
+      }
+    } catch (err) {
+      // F1: cuenta auto-registrada pendiente de aprobación por un
+      // Administrador -- mensaje específico en vez del genérico de arriba.
+      setError(err instanceof PendingApprovalError ? err.message : 'Credenciales incorrectas');
     }
     setLoading(false);
   };
@@ -43,23 +50,23 @@ const Login: React.FC = () => {
   };
 
   return (
-    <Box sx={{ 
-      minHeight: '100vh', 
-      display: 'flex', 
-      alignItems: 'center', 
+    <Box sx={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
       justifyContent: 'center',
       bgcolor: '#f5f5f5',
       p: 2
     }}>
       <Card sx={{ maxWidth: 450, width: '100%', overflow: 'visible' }}>
-        <Box sx={{ 
-          bgcolor: COLORS.ipnGuinda, 
-          height: 100, 
-          mt: -5, 
-          mx: 4, 
-          borderRadius: 2, 
-          display: 'flex', 
-          alignItems: 'center', 
+        <Box sx={{
+          bgcolor: COLORS.ipnGuinda,
+          height: 100,
+          mt: -5,
+          mx: 4,
+          borderRadius: 2,
+          display: 'flex',
+          alignItems: 'center',
           justifyContent: 'center',
           boxShadow: 3
         }}>
@@ -67,11 +74,11 @@ const Login: React.FC = () => {
             Iniciar Sesión
           </Typography>
         </Box>
-        
+
         <CardContent sx={{ pt: 4, px: 4 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-            <img src="https://picsum.photos/id/10/100/40" alt="CICATA" />
-            <img src="https://picsum.photos/id/11/50/40" alt="IPN" />
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3, alignItems: 'center' }}>
+            <img src="/logo-cicata.png" alt="CICATA" style={{ height: 120, objectFit: 'contain' }} />
+            <img src="/logo-ipn.png" alt="IPN" style={{ height: 100, objectFit: 'contain' }} />
           </Box>
 
           <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="fullWidth" sx={{ mb: 3 }}>
@@ -106,11 +113,11 @@ const Login: React.FC = () => {
                 <FormControlLabel control={<Checkbox defaultChecked />} label="Recordarme" />
                 <MuiLink href="#" variant="body2" color="primary">¿Olvidaste tu contraseña?</MuiLink>
               </Box>
-              <Button 
-                type="submit" 
-                fullWidth 
-                variant="contained" 
-                size="large" 
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                size="large"
                 sx={{ mt: 3, mb: 2, bgcolor: COLORS.ipnGuinda }}
                 disabled={loading}
               >
@@ -126,10 +133,10 @@ const Login: React.FC = () => {
               <Typography variant="caption" color="textSecondary">
                 Detectando dispositivo...
               </Typography>
-              <Button 
-                onClick={handleNFCSimulation} 
-                fullWidth 
-                variant="outlined" 
+              <Button
+                onClick={handleNFCSimulation}
+                fullWidth
+                variant="outlined"
                 sx={{ mt: 4 }}
                 disabled={loading}
               >
@@ -145,7 +152,7 @@ const Login: React.FC = () => {
           </Box>
         </CardContent>
       </Card>
-      
+
       <style>{`
         @keyframes pulse {
           0% { transform: scale(1); opacity: 1; }

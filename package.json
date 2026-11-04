@@ -4,25 +4,40 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --force",
+    "server": "node --watch server/index.js",
+    "influx": ".\\influxdb\\influxd.exe",
+    "dev:all": "concurrently \"npm run dev\" \"npm run server\" \"npm run influx\"",
+    "dev:with-influx": "concurrently \"npm run dev\" \"npm run server\" \"npm run influx\"",
     "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3",
-    "@mui/material": "^7.3.6",
-    "react-router-dom": "^7.11.0",
-    "@mui/icons-material": "^7.3.6",
-    "react-leaflet": "^5.0.0",
+    "@emotion/react": "^11.11.4",
+    "@emotion/styled": "^11.11.5",
+    "@influxdata/influxdb-client": "^1.35.0",
+    "@mui/icons-material": "^5.15.15",
+    "@mui/material": "^5.15.15",
+    "chart.js": "^4.4.2",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
     "leaflet": "^1.9.4",
-    "chart.js": "^4.5.1",
-    "react-chartjs-2": "^5.3.1"
+    "react": "^18.3.1",
+    "react-chartjs-2": "^5.2.0",
+    "react-dom": "^18.3.1",
+    "react-leaflet": "^4.2.1",
+    "react-router-dom": "^6.23.0",
+    "sqlite3": "^6.0.1"
   },
   "devDependencies": {
-    "@types/node": "^22.14.0",
-    "@vitejs/plugin-react": "^5.0.0",
-    "typescript": "~5.8.2",
-    "vite": "^6.2.0"
+    "@types/leaflet": "^1.9.22",
+    "@types/node": "^26.1.2",
+    "@types/react": "^18.2.79",
+    "@types/react-dom": "^18.2.25",
+    "@vitejs/plugin-react": "^4.2.1",
+    "concurrently": "^10.0.4",
+    "typescript": "^5.4.5",
+    "vite": "^5.2.8"
   }
 }
