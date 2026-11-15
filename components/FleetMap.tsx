@@ -4,6 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import { Bike } from '../types';
 import { COLORS } from '../constants';
+import 'leaflet/dist/leaflet.css';
 
 // Fix for default marker icon
 const customMarker = (color: string) => {
@@ -34,7 +35,16 @@ interface FleetMapProps {
   zoom?: number;
 }
 
-const FleetMap: React.FC<FleetMapProps> = ({ bikes, center = [20.5888, -100.3899], zoom = 16 }) => {
+const FleetMap: React.FC<FleetMapProps> = ({ bikes: initialBikes, center = [20.5888, -100.3899], zoom = 16 }) => {
+  // F2: antes este componente movía TODAS las bicicletas "activas" con un
+  // jitter aleatorio (Math.random()) cada segundo, sin relación con ningún
+  // dato real -- una animación falsa de "movimiento en vivo". Ahora
+  // bike.ubicacion ya viene de la telemetría real (o simulada, en modo
+  // demo) y se refresca sola porque hooks/useBikes.ts vuelve a pedir la
+  // lista cada 5s, así que ya no hace falta (ni se debe) inventar
+  // movimiento aquí -- el mapa solo refleja los props que recibe.
+  const bikes = initialBikes;
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'activa': return COLORS.greenActive;
@@ -49,20 +59,24 @@ const FleetMap: React.FC<FleetMapProps> = ({ bikes, center = [20.5888, -100.3899
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      {bikes.map((bike) => (
-        <Marker 
-          key={bike.id} 
-          position={[bike.ubicacion.lat, bike.ubicacion.lng]}
+      {/* F2: bike.ubicacion ahora puede ser null (sin dato reciente para esa
+          bicicleta -- ver services/api.ts getBikes()); esas simplemente no
+          se dibujan en el mapa en vez de reventar o mostrar una posición
+          inventada. */}
+      {bikes.filter((bike) => bike.ubicacion !== null).map((bike) => (
+        <Marker
+          key={bike.id}
+          position={[bike.ubicacion!.lat, bike.ubicacion!.lng]}
           icon={customMarker(getStatusColor(bike.estado))}
         >
           <Popup>
             <div style={{ padding: '5px' }}>
               <h3 style={{ margin: '0 0 5px 0', fontWeight: 'bold' }}>{bike.id} - {bike.modelo}</h3>
-              <p style={{ margin: '0' }}><strong>Batería:</strong> {bike.bateria}%</p>
-              <p style={{ margin: '0' }}><strong>Velocidad:</strong> {bike.velocidad} km/h</p>
+              <p style={{ margin: '0' }}><strong>Batería:</strong> {bike.bateria !== null ? `${bike.bateria}%` : 'Sin datos'}</p>
+              <p style={{ margin: '0' }}><strong>Velocidad:</strong> {bike.velocidad !== null ? `${bike.velocidad} km/h` : 'Sin datos'}</p>
               <p style={{ margin: '0' }}><strong>Estado:</strong> {bike.estado}</p>
-              <a href={`#/dashboard/bike/${bike.id}`} style={{ display: 'block', marginTop: '10px', color: COLORS.ipnGuinda, fontWeight: 'bold' }}>
-                Ver Telemetría Completa
+              <a href={`#/dashboard/scada/${bike.id}`} style={{ display: 'block', marginTop: '10px', color: COLORS.ipnGuinda, fontWeight: 'bold' }}>
+                Ver Telemetría SCADA
               </a>
             </div>
           </Popup>

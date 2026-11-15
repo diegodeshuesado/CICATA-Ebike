@@ -1,17 +1,19 @@
 
 import React, { useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { 
-  Box, AppBar, Toolbar, Typography, IconButton, 
-  Drawer, List, ListItem, ListItemButton, ListItemIcon, 
-  ListItemText, Avatar, Menu, MenuItem, Divider
+import {
+  Box, AppBar, Toolbar, Typography, IconButton,
+  Drawer, List, ListItem, ListItemButton, ListItemIcon,
+  ListItemText, Avatar, Menu, MenuItem, Divider,
+  Switch, FormControlLabel, Tooltip
 } from '@mui/material';
-import { 
-  Menu as MenuIcon, Dashboard, DirectionsBike, 
-  People, BarChart, Logout, Person 
+import {
+  Menu as MenuIcon, Dashboard, DirectionsBike,
+  People, BarChart, Logout, Person, SettingsInputComponent, Speed
 } from '@mui/icons-material';
 import { COLORS } from '../constants';
 import { useAuth } from '../context/AuthContext';
+import { useDemoMode } from '../hooks/useDemoMode';
 import { UserRole } from '../types';
 
 const DRAWER_WIDTH = 240;
@@ -22,6 +24,12 @@ const Layout: React.FC = () => {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  // D1: interruptor de modo demo (solo Administrador puede activarlo --
+  // ver server/index.js POST /api/demo-mode). A propósito los datos
+  // simulados no llevan ninguna marca visual distinta en el resto de la
+  // UI (decisión explícita del usuario), este switch es el único lugar
+  // donde el modo demo es visible.
+  const { enabled: demoModeEnabled, setEnabled: setDemoModeEnabled } = useDemoMode();
 
   const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => setAnchorEl(event.currentTarget);
@@ -33,41 +41,49 @@ const Layout: React.FC = () => {
   };
 
   const menuItems = [
-    { 
-      text: 'Dashboard', 
-      icon: <Dashboard />, 
-      path: user?.rol === UserRole.USUARIO ? '/dashboard/user' : '/dashboard/admin' 
+    {
+      text: 'Dashboard',
+      icon: <Dashboard />,
+      path: user?.rol === UserRole.USUARIO ? '/dashboard/user' : '/dashboard/admin'
     },
-    { 
-      text: 'Bicicletas', 
-      icon: <DirectionsBike />, 
-      path: '/dashboard/bikes', 
-      hide: user?.rol === UserRole.USUARIO 
+    {
+      text: 'Bicicletas',
+      icon: <DirectionsBike />,
+      path: '/dashboard/bikes',
+      hide: user?.rol === UserRole.USUARIO
     },
-    { 
-      text: 'Usuarios', 
-      icon: <People />, 
-      path: '/dashboard/users', 
-      hide: user?.rol !== UserRole.ADMIN 
+
+    {
+      text: 'Usuarios',
+      icon: <People />,
+      path: '/dashboard/users',
+      hide: user?.rol !== UserRole.ADMIN
     },
-    { 
-      text: 'Reportes', 
-      icon: <BarChart />, 
-      path: '/dashboard/reports', 
-      hide: user?.rol === UserRole.USUARIO 
+    {
+      text: 'Reportes',
+      icon: <BarChart />,
+      path: '/dashboard/reports',
+      hide: user?.rol === UserRole.USUARIO
+    },
+    {
+      text: 'Métricas del Sistema',
+      icon: <Speed />,
+      path: '/dashboard/system-metrics',
+      hide: user?.rol === UserRole.USUARIO
     },
   ].filter(i => !i.hide);
 
   const drawer = (
     <Box sx={{ bgcolor: 'white', height: '100%' }}>
-      <Toolbar sx={{ justifyContent: 'center', py: 2 }}>
-        <img src="https://picsum.photos/id/1/150/50" alt="CICATA" style={{ width: 120, objectFit: 'contain' }} />
-      </Toolbar>
+      <Toolbar /> {/* Spacer for fixed AppBar */}
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+        <img src="/logo-cicata.png" alt="CICATA" style={{ width: 140, objectFit: 'contain' }} />
+      </Box>
       <Divider />
       <List sx={{ mt: 2 }}>
         {menuItems.map((item) => (
           <ListItem key={item.text} disablePadding>
-            <ListItemButton 
+            <ListItemButton
               onClick={() => { navigate(item.path); setMobileOpen(false); }}
               selected={location.pathname === item.path}
               sx={{
@@ -89,10 +105,10 @@ const Layout: React.FC = () => {
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-      <AppBar 
-        position="fixed" 
-        sx={{ 
-          zIndex: (theme) => theme.zIndex.drawer + 1, 
+      <AppBar
+        position="fixed"
+        sx={{
+          zIndex: (theme) => theme.zIndex.drawer + 1,
           bgcolor: COLORS.ipnGuinda,
           boxShadow: 'none'
         }}
@@ -107,15 +123,31 @@ const Layout: React.FC = () => {
             >
               <MenuIcon />
             </IconButton>
-            <Box sx={{ display: { xs: 'none', md: 'block' }, mr: 3 }}>
-               <img src="https://picsum.photos/id/2/150/40" alt="Logo CICATA" style={{ height: 35, borderRadius: 4 }} />
+            <Box sx={{ display: { xs: 'none', md: 'block' }, mr: 2 }}>
+              <img src="/logo-cicata.png" alt="Logo CICATA" style={{ height: 40, borderRadius: 0, marginRight: 0, filter: 'drop-shadow(0 0 2px white)' }} />
             </Box>
-            <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 'bold', fontSize: { xs: '0.8rem', sm: '1.1rem' } }}>
+            <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', fontSize: { xs: '0.8rem', sm: '1.1rem' }, lineHeight: 1.2 }}>
               Sistema de Telemetría LEVs - IPN CICATA Querétaro
             </Typography>
           </Box>
-          
+
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {user?.rol === UserRole.ADMIN && (
+              <Tooltip title="Al activarlo, las bicicletas sin telemetría real (todas salvo B001) muestran datos simulados para poder exponer el sistema completo">
+                <FormControlLabel
+                  sx={{ mr: 0, display: { xs: 'none', md: 'flex' } }}
+                  control={
+                    <Switch
+                      size="small"
+                      checked={demoModeEnabled}
+                      onChange={(e) => setDemoModeEnabled(e.target.checked)}
+                      color="warning"
+                    />
+                  }
+                  label={<Typography variant="caption" sx={{ color: 'white' }}>Modo Demo</Typography>}
+                />
+              </Tooltip>
+            )}
             <Box sx={{ textAlign: 'right', display: { xs: 'none', sm: 'block' } }}>
               <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
                 {user?.nombre}
@@ -126,14 +158,14 @@ const Layout: React.FC = () => {
             </Box>
             <IconButton onClick={handleMenuOpen} color="inherit">
               <Avatar sx={{ bgcolor: 'white', color: COLORS.ipnGuinda, width: 32, height: 32 }}>
-                {user?.nombre[0]}
+                {user?.nombre?.[0] || ''}
               </Avatar>
             </IconButton>
             <Box sx={{ display: { xs: 'none', md: 'block' } }}>
-               <img src="https://picsum.photos/id/3/80/40" alt="Logo IPN" style={{ height: 40, borderRadius: 4 }} />
+              <img src="/logo-ipn.png" alt="Logo IPN" style={{ height: 45, width: 'auto', borderRadius: 0, filter: 'drop-shadow(0 0 2px white)' }} />
             </Box>
           </Box>
-          
+
           <Menu
             anchorEl={anchorEl}
             open={Boolean(anchorEl)}
@@ -180,7 +212,7 @@ const Layout: React.FC = () => {
 
       <Box component="main" sx={{ flexGrow: 1, p: 3, width: { sm: `calc(100% - ${DRAWER_WIDTH}px)` }, mt: 8 }}>
         <Outlet />
-        
+
         <Box component="footer" sx={{ py: 3, mt: 4, textAlign: 'center', borderTop: '1px solid #ddd' }}>
           <Typography variant="body2" color="textSecondary">
             © 2024-2025 Instituto Politécnico Nacional

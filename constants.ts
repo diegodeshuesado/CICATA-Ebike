@@ -14,7 +14,7 @@ export const COLORS = {
 };
 
 export const MOCK_USERS: User[] = [
-  { id: 'u1', email: 'admin@ipn.mx', nombre: 'Roberto Martínez', rol: UserRole.ADMIN },
+  { id: 'u1', email: 'admin@ipn.mx', nombre: 'Diego Gutiérrez Hernández', rol: UserRole.ADMIN },
   { id: 'u2', email: 'investigador@ipn.mx', nombre: 'Ana López', rol: UserRole.INVESTIGADOR },
   { id: 'u3', email: 'usuario@ipn.mx', nombre: 'Carlos Ramírez', rol: UserRole.USUARIO, nfc: 'ABC123456', bicicletaAsignada: 'B001' },
 ];

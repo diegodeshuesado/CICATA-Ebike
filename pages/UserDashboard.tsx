@@ -1,21 +1,29 @@
 
 import React from 'react';
-import { 
-  Grid, Card, CardContent, Typography, Box, 
-  Table, TableBody, TableCell, TableContainer, 
+import {
+  Grid, Card, CardContent, Typography, Box,
+  Table, TableBody, TableCell, TableContainer,
   TableHead, Paper, Button, Avatar, Chip
 } from '@mui/material';
-import { 
-  History, DirectionsBike, Timeline, EmojiEvents, 
+import {
+  History, DirectionsBike, Timeline, EmojiEvents,
   PlayArrow, BatteryFull
 } from '@mui/icons-material';
 import { MOCK_TRIPS, MOCK_BIKES, COLORS } from '../constants';
 import { useAuth } from '../context/AuthContext';
+import { useBikes } from '../hooks/useBikes';
 import { useNavigate } from 'react-router-dom';
 
 const UserDashboard: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  // F11: `user.bicicletaAsignada` no viene poblado desde el backend (esa
+  // columna no existe en `usuarios` -- la relación real vive al revés, en
+  // `bicicletas_lev.usuario_asignado`, ver pages/UsersPage.tsx). Se busca
+  // aquí para que esta pantalla muestre la asignación real en vez de
+  // siempre "Ninguna".
+  const { bikes } = useBikes();
+  const assignedBikeId = bikes.find(b => b.usuario_asignado === user?.id)?.id || user?.bicicletaAsignada;
 
   const userStats = [
     { title: 'Distancia Total', value: '45.1 km', icon: <Timeline />, color: COLORS.blueInfo },
@@ -29,10 +37,10 @@ const UserDashboard: React.FC = () => {
   return (
     <Box>
       <Box sx={{ mb: 4, display: 'flex', alignItems: 'center' }}>
-        <Avatar sx={{ width: 64, height: 64, mr: 3, bgcolor: COLORS.ipnGuinda }}>{user?.nombre[0]}</Avatar>
+        <Avatar sx={{ width: 64, height: 64, mr: 3, bgcolor: COLORS.ipnGuinda }}>{user?.nombre?.[0] || ''}</Avatar>
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 'bold' }}>Bienvenido, {user?.nombre}</Typography>
-          <Typography variant="body1" color="textSecondary">Bicicleta Asignada: <strong>{user?.bicicletaAsignada || 'Ninguna'}</strong></Typography>
+          <Typography variant="body1" color="textSecondary">Bicicleta Asignada: <strong>{assignedBikeId || 'Ninguna'}</strong></Typography>
         </Box>
       </Box>
 
@@ -96,13 +104,13 @@ const UserDashboard: React.FC = () => {
               </Typography>
               <Box sx={{ mt: 2 }}>
                 {availableBikes.map((bike) => (
-                  <Box key={bike.id} sx={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
+                  <Box key={bike.id} sx={{
+                    display: 'flex',
+                    alignItems: 'center',
                     justifyContent: 'space-between',
-                    p: 1.5, 
-                    mb: 1, 
-                    borderRadius: 2, 
+                    p: 1.5,
+                    mb: 1,
+                    borderRadius: 2,
                     border: '1px solid #eee',
                     '&:hover': { bgcolor: '#f8f9fa' }
                   }}>
@@ -116,13 +124,13 @@ const UserDashboard: React.FC = () => {
                         </Box>
                       </Box>
                     </Box>
-                    <Button 
-                      size="small" 
-                      variant="outlined" 
+                    <Button
+                      size="small"
+                      variant="outlined"
                       sx={{ borderRadius: 5 }}
-                      onClick={() => navigate(`/dashboard/bike/${bike.id}`)}
+                      onClick={() => navigate(`/dashboard/scada/${bike.id}?mode=ride`)}
                     >
-                      Reservar
+                      Iniciar Viaje
                     </Button>
                   </Box>
                 ))}
@@ -141,9 +149,9 @@ const UserDashboard: React.FC = () => {
                   Recuerda usar siempre tu equipo de protección y respetar los límites de velocidad.
                 </Typography>
               </Box>
-              <Button 
-                variant="contained" 
-                size="large" 
+              <Button
+                variant="contained"
+                size="large"
                 startIcon={<PlayArrow />}
                 sx={{ bgcolor: 'white', color: COLORS.ipnGuinda, px: 4, '&:hover': { bgcolor: '#f0f0f0' } }}
               >
